@@ -21,6 +21,8 @@ game/exports
 
 # AAOS
 *.apk
+*.patch
+*.diff
 # 1. Ignore everything inside the build folder
 game/android/build/*
 # 2. But do not ignore the subdirectories if they contain the file (crucial for nesting)

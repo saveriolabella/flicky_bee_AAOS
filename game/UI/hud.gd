@@ -13,6 +13,9 @@ var fly_total := 5.0
 var fly := 5.0
 var fly_bar : TextureProgressBar
 
+var is_audio_muted := false
+var persist_node: Persist = null
+
 var distance : float
 var score : int
 
@@ -20,6 +23,10 @@ var score : int
 func _ready():
 	hp_bar = $Health_Meter/HealthBar
 	fly_bar = $Flight_Meter/FlyBar
+	_cache_persist_node()
+	_connect_persist_signal()
+	_sync_mute_state_from_persist()
+	_refresh_mute_icon()
 	_update_score(0, 0)
 	_setup()
 
@@ -31,7 +38,53 @@ func _setup() -> void:
 	_update_score(0, 0)
 	_update_distance(0)
 	$PauseButton.show()
+	$MuteButton.show()
+	_sync_mute_state_from_persist()
+	_refresh_mute_icon()
 	$Pause.hide()
+
+
+func _exit_tree() -> void:
+	_disconnect_persist_signal()
+
+
+func _cache_persist_node() -> void:
+	if get_window().has_node("Persist"):
+		persist_node = get_window().get_node("Persist")
+	else:
+		persist_node = null
+
+
+func _connect_persist_signal() -> void:
+	if persist_node == null:
+		return
+	var callback := Callable(self, "_on_global_audio_mute_state_changed")
+	if !persist_node.is_connected("audio_mute_state_changed", callback):
+		persist_node.connect("audio_mute_state_changed", callback)
+
+
+func _disconnect_persist_signal() -> void:
+	if persist_node == null:
+		return
+	var callback := Callable(self, "_on_global_audio_mute_state_changed")
+	if persist_node.is_connected("audio_mute_state_changed", callback):
+		persist_node.disconnect("audio_mute_state_changed", callback)
+
+
+func _sync_mute_state_from_persist() -> void:
+	if persist_node != null:
+		is_audio_muted = persist_node.is_audio_muted
+	else:
+		is_audio_muted = false
+
+
+func _refresh_mute_icon() -> void:
+	$MuteButton/Slash.visible = is_audio_muted
+
+
+func _on_global_audio_mute_state_changed(muted: bool) -> void:
+	is_audio_muted = muted
+	_refresh_mute_icon()
 
 
 func _update_health_bar(new_health : float, total : float) -> void:
@@ -87,6 +140,22 @@ func _on_pause_pressed():
 	$PauseButton.hide()
 	$Pause.show()
 	get_tree().paused = true
+
+
+func _on_mute_pressed() -> void:
+	if persist_node == null:
+		_cache_persist_node()
+	if persist_node == null:
+		return
+
+	if is_audio_muted:
+		var granted = persist_node.request_audio_focus_global()
+		if granted:
+			persist_node.set_audio_muted_global(false)
+		return
+
+	persist_node.set_audio_muted_global(true)
+	persist_node.abandon_audio_focus_global()
 
 
 func _on_continue_pressed():

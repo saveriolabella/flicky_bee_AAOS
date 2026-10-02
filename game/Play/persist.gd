@@ -2,6 +2,8 @@ extends Node
 
 class_name Persist
 
+signal audio_mute_state_changed(is_muted: bool)
+
 @export var game_ver := 1.0
 const keys = [
 	"version",
@@ -37,6 +39,99 @@ var achievements : PackedStringArray
 var hat := "default"
 var trail := "default"
 var flower := "default"
+
+var audio_focus_plugin: Object = null
+var audio_focus_connected := false
+var is_audio_muted := false
+var muted_by_focus_loss := false
+
+
+func af_log(message: String) -> void:
+	print("[AudioFocus] ", message)
+
+
+func _ready() -> void:
+	_connect_audio_focus_signal()
+
+
+func _exit_tree() -> void:
+	_disconnect_audio_focus_signal()
+
+
+func _get_audio_focus_plugin() -> Object:
+	if audio_focus_plugin != null:
+		return audio_focus_plugin
+	if !Engine.has_singleton("ReadyLinkAudioFocusPlugin"):
+		return null
+	audio_focus_plugin = Engine.get_singleton("ReadyLinkAudioFocusPlugin")
+	return audio_focus_plugin
+
+
+func _connect_audio_focus_signal() -> void:
+	var plugin = _get_audio_focus_plugin()
+	if plugin == null:
+		return
+	var callback := Callable(self, "_on_android_audio_focus_changed")
+	if plugin.has_signal("focus_changed") and !plugin.is_connected("focus_changed", callback):
+		plugin.connect("focus_changed", callback)
+		audio_focus_connected = true
+
+
+func _disconnect_audio_focus_signal() -> void:
+	var plugin = _get_audio_focus_plugin()
+	if plugin == null:
+		return
+	var callback := Callable(self, "_on_android_audio_focus_changed")
+	if audio_focus_connected and plugin.is_connected("focus_changed", callback):
+		plugin.disconnect("focus_changed", callback)
+	audio_focus_connected = false
+
+
+func request_audio_focus_global() -> bool:
+	var plugin = _get_audio_focus_plugin()
+	if plugin == null:
+		return true
+
+	var result = plugin.call("request_audio_focus")
+	if typeof(result) == TYPE_BOOL:
+		return bool(result)
+
+	result = plugin.call("requestAudioFocus")
+	if typeof(result) == TYPE_BOOL:
+		return bool(result)
+
+	af_log("request_audio_focus/requestAudioFocus method not found on singleton")
+	return false
+
+
+func abandon_audio_focus_global() -> void:
+	var plugin = _get_audio_focus_plugin()
+	if plugin == null:
+		return
+	plugin.call("abandon_audio_focus")
+
+
+func _set_all_audio_muted(muted: bool) -> void:
+	for bus_idx in range(AudioServer.get_bus_count()):
+		AudioServer.set_bus_mute(bus_idx, muted)
+
+
+func set_audio_muted_global(muted: bool, caused_by_focus_loss: bool = false) -> void:
+	is_audio_muted = muted
+	muted_by_focus_loss = muted and caused_by_focus_loss
+	_set_all_audio_muted(muted)
+	emit_signal("audio_mute_state_changed", is_audio_muted)
+
+
+func _on_android_audio_focus_changed(focus_change: int) -> void:
+	af_log("focus_changed signal value=" + str(focus_change))
+	if focus_change < 0:
+		if !is_audio_muted:
+			set_audio_muted_global(true, true)
+	elif focus_change == 1:
+		# Policy: remain muted after focus regain until user explicitly unmutes.
+		if muted_by_focus_loss:
+			muted_by_focus_loss = false
 
 
 func _save_game() -> void:

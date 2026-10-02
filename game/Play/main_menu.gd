@@ -16,7 +16,6 @@ var persist_node : Persist
 var play_node : Node
 
 var ios_failure := false
-var audio_focus_plugin: Object = null
 var audio_focus_requested := false
 
 
@@ -28,30 +27,11 @@ func _request_startup_audio_focus() -> void:
 	if audio_focus_requested:
 		af_log("startup request skipped: already requested")
 		return
-	if !Engine.has_singleton("ReadyLinkAudioFocusPlugin"):
-		af_log("Engine singleton ReadyLinkAudioFocusPlugin not found")
+	if persist_node == null:
+		af_log("startup request skipped: persist node is null")
 		return
-	if audio_focus_plugin == null:
-		audio_focus_plugin = Engine.get_singleton("ReadyLinkAudioFocusPlugin")
-		af_log("singleton acquired via name='ReadyLinkAudioFocusPlugin': " + str(audio_focus_plugin))
-	if audio_focus_plugin == null:
-		af_log("startup request skipped: singleton is null")
-		return
-	var result = audio_focus_plugin.call("request_audio_focus")
-	if typeof(result) == TYPE_BOOL:
-		audio_focus_requested = bool(result)
-		af_log("startup call used method=request_audio_focus")
-		af_log("startup request_audio_focus result=" + str(audio_focus_requested))
-		return
-
-	result = audio_focus_plugin.call("requestAudioFocus")
-	if typeof(result) == TYPE_BOOL:
-		audio_focus_requested = bool(result)
-		af_log("startup call used method=requestAudioFocus")
-		af_log("startup request_audio_focus result=" + str(audio_focus_requested))
-		return
-
-	af_log("request_audio_focus/requestAudioFocus method not found on singleton")
+	audio_focus_requested = persist_node.request_audio_focus_global()
+	af_log("startup request_audio_focus result=" + str(audio_focus_requested))
 
 func _ready():
 	persist_node = persist_scene.instantiate()
