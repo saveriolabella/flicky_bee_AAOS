@@ -19,9 +19,9 @@ config/icon="res://Publishing/GameIcon.png"
 
 window/size/viewport_width=1080
 window/size/viewport_height=1920
+window/size/mode=2
 window/stretch/mode="viewport"
 window/stretch/aspect="expand"
-window/handheld/orientation=1
 
 [filesystem]
 
