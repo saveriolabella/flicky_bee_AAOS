@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'com.harman.readylink.audiofocus'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation-jvm:1.10.0'
+    def localGodotAar = file('libs/godot-lib.4.3.stable.template_release.aar')
+    //if (project.hasProperty('useLocalGodotAar') && localGodotAar.exists()) {
+    //    compileOnly files(localGodotAar)
+    //} else {
+    //    compileOnly 'org.godotengine:godot:4.3.0.stable'
+    //}
+    //compileOnly 'org.godotengine:godot:4.3.0.stable'
+    implementation("org.godotengine:godot:4.3.0.stable")
+}
+
+tasks.register('exportReadyLinkAudioFocusReleaseAar', Copy) {
+    from(layout.buildDirectory.file('outputs/aar/plugin-release.aar'))
+    into(layout.buildDirectory.dir('outputs/aar'))
+    rename { 'ReadyLinkAudioFocusPlugin.release.aar' }
+}
+
+tasks.matching { it.name == 'assembleRelease' }.configureEach {
+    finalizedBy(tasks.named('exportReadyLinkAudioFocusReleaseAar'))
+}
