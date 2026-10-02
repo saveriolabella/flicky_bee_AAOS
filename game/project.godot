@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Flicky Bee"
+config/name="Flicky Bee AAOS"
 run/main_scene="res://Play/main_menu.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
 config/icon="res://Publishing/GameIcon.png"
@@ -42,7 +42,8 @@ theme/default_font_generate_mipmaps=true
 [rendering]
 
 textures/canvas_textures/default_texture_filter=2
-renderer/rendering_method="mobile"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 textures/default_filters/use_nearest_mipmap_filter=true
 textures/decals/filter=5

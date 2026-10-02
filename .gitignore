@@ -1,8 +1,8 @@
 
 # Godot-specific ignores
 game/.godot
-game/export.cfg
-game/export_presets.cfg
+#game/export.cfg
+#game/export_presets.cfg
 
 # Import Stuff
 *.kra~
@@ -15,6 +15,16 @@ data_*/
 
 # Mobile Export Stuff
 game/ios/
-game/android/
+#game/android/
 game/exports/
 game/exports
+
+# AAOS
+*.apk
+# 1. Ignore everything inside the build folder
+game/android/build/*
+# 2. But do not ignore the subdirectories if they contain the file (crucial for nesting)
+#![Aa]ndroid/build/**/
+# 3. Explicitly include the specific file
+!game/android/build/AndroidManifest.xml
+!game/android/build/gradle.properties
